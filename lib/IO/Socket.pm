@@ -45,8 +45,7 @@ sub new {
 
     ${*$sock}{'io_socket_timeout'} = delete $arg{Timeout};
 
-    return scalar(%arg) ? $sock->configure(\%arg)
-			: $sock;
+    return $sock->configure(\%arg);
 }
 
 my @domain2pkg;
