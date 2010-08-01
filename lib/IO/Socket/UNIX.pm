@@ -33,8 +33,7 @@ sub configure {
 	return undef;
 
     if(exists $arg->{Local}) {
-	my $addr = sockaddr_un($arg->{Local});
-	$sock->bind($addr) or
+	$sock->bind(%$arg) or 
 	    return undef;
     }
     if(exists $arg->{Listen} && $type != SOCK_DGRAM) {
@@ -42,12 +41,23 @@ sub configure {
 	    return undef;
     }
     elsif(exists $arg->{Peer}) {
-	my $addr = sockaddr_un($arg->{Peer});
-	$sock->connect($addr) or
+	$sock->connect(%$arg) or
 	    return undef;
     }
 
     $sock;
+}
+
+sub pack_bindaddr {
+    my($sock,%args) = @_;
+    exists $args{Local} or croak 'usage: $sock->pack_bindaddr(Local => $path)';
+    return sockaddr_un($args{Local});
+}
+
+sub pack_connectaddr {
+    my($sock,%args) = @_;
+    exists $args{Peer} or croak 'usage: $sock->pack_connectaddr(Peer => $path)';
+    return sockaddr_un($args{Peer});
 }
 
 sub hostpath {
@@ -114,6 +124,18 @@ by default. This was not the case with earlier releases.
 =head1 METHODS
 
 =over 4
+
+=item bind(ARGS...)
+
+Takes the following named arguments:
+
+    Local   	Path to local fifo
+
+=item connect(ARGS...)
+
+Takes the following named arguments:
+
+    Peer    	Path to peer fifo
 
 =item hostpath()
 

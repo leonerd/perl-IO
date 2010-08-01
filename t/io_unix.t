@@ -55,7 +55,7 @@ unlink($PATH) or $^O eq 'os2' or die "Can't unlink $PATH: $!";
 
 # Start testing
 $| = 1;
-print "1..5\n";
+print "1..6\n";
 
 use IO::Socket;
 
@@ -117,4 +117,34 @@ if($pid = fork()) {
     exit;
 } else {
  die;
+}
+
+$listen = IO::Socket::UNIX->new or die "$!";
+$listen->bind(Local => $PATH) or die "$!";
+$listen->listen();
+
+if($pid = fork()) {
+
+    $sock = $listen->accept();
+
+    if (defined $sock) {
+	$sock->close;
+	waitpid($pid,0);
+	unlink($PATH) || $^O eq 'os2' || warn "Can't unlink $PATH: $!";
+
+	print "ok 6\n";
+    } else {
+	print "# accept() failed: $!\n";
+	print "not ok 6\n";
+    }
+} elsif(defined $pid) {
+
+    $sock = IO::Socket::UNIX->new or die "$!";
+    $sock->connect(Peer => $PATH) or die "$!";
+
+    $sock->close;
+
+    exit;
+} else {
+    die;
 }
