@@ -103,9 +103,18 @@ sub socketpair {
 }
 
 sub connect {
-    @_ == 2 or croak 'usage: $sock->connect(NAME)';
     my $sock = shift;
-    my $addr = shift;
+    my $addr;
+    if( @_ > 1 and $sock->can( "pack_connectaddr" ) ) {
+	$addr = $sock->pack_connectaddr( @_ );
+    }
+    elsif( @_ == 1 ) {
+	$addr = shift;
+    }
+    else {
+	croak 'usage: $sock->connect(NAME)';
+    }
+
     my $timeout = ${*$sock}{'io_socket_timeout'};
     my $err;
     my $blocking;
@@ -196,9 +205,17 @@ sub close {
 }
 
 sub bind {
-    @_ == 2 or croak 'usage: $sock->bind(NAME)';
     my $sock = shift;
-    my $addr = shift;
+    my $addr;
+    if( @_ > 1 and $sock->can( "pack_bindaddr" ) ) {
+	$addr = $sock->pack_bindaddr( @_ );
+    }
+    elsif( @_ == 1 ) {
+	$addr = shift;
+    }
+    else {
+	croak 'usage: $sock->bind(NAME)';
+    }
 
     return bind($sock, $addr) ? $sock
 			      : undef;
@@ -443,6 +460,14 @@ timeout on the handle, or non-blocking IO.
 Call C<socketpair> and return a list of two sockets created, or an
 empty list on failure.
 
+=item connect(ARGS...)
+
+=item bind(ARGS...)
+
+Some C<IO::Socket> subclasses allow a late C<connect> or C<bind> method call
+after construction to take the same named arguments as the constructor would.
+Each subclass should document this ability itself.
+
 =back
 
 Additional methods that are provided are:
@@ -505,6 +530,14 @@ any arguments then the current setting is returned. If called with an argument
 the current setting is changed and the previous value returned.
 
 =back
+
+=head1 IMPLEMENTING NAMED ARGUMENTS FOR connect OR bind
+
+If the C<connect> or C<bind> methods are passed more than one argument, these
+may be interpreted as named arguments if the subclass provides methods called
+C<pack_connectaddr> or C<pack_bindaddr> respectively. These are passed all the
+arguments given to the C<connect> or C<bind> call, and should return a packed
+address structure to give to the underlying C<connect> or C<bind> syscall.
 
 =head1 SEE ALSO
 
